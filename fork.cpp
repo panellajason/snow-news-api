@@ -3,7 +3,7 @@
 //April 5, 2020
 //Fork Programming
 //This program code defines the parent and child processes
-//for searching for occurences of a letter in an array.
+//for searching for occurences of a letter in an array
 #include <iostream>
 #include <cstdio>
 #include <string>
