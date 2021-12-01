@@ -3,8 +3,9 @@ const express = require('express')
 const axios = require('axios')
 const cheerio = require('cheerio')
 
-const expressInstance = express()
+const app = express()
 const articles = []
+const resorts = []
 const newspapers = [
     {
         name: 'Open Snow',
@@ -45,7 +46,7 @@ newspapers.forEach(newspaper => {
         } else if(newspaper.name == 'Unofficial Networks') {
 
             $('a:contains("Powder")', html).each(function() {
-                title = $(this).text().replace(/\t|\n/g, '').replace('\\', '')
+                title = $(this).text().replace(/\t|\n/g, '').replace(/\\/g, '') 
                 url = $(this).attr('href')
                 articles.push({
                     title, url: newspaper.base + url, source: newspaper.name
@@ -64,16 +65,40 @@ newspapers.forEach(newspaper => {
                 
             })
         }
+        
+
     })
 })
 //Home Page
-expressInstance.get('/', (req, res) => {
+app.get('/', (req, res) => {
     res.json('Welcome to Snow News')
 })
 
 //All News
-expressInstance.get('/allnews', (req, res) => {
+app.get('/allnews', (req, res) => {
     res.json(articles)
 })
 
-expressInstance.listen(PORT, () => console.log(`server running on PORT ${PORT}`))
+//Snowfall Forecast
+app.get('/forecast', (req, res) => {
+    axios.get('https://opensnow.com/dailysnow/southerncalifornia')
+    .then((websiteResponse) => {
+
+        const html = websiteResponse.data
+        const $ = cheerio.load(html)
+
+        $('.resort').each(function() {
+            resort = $(this).children('.name').text()
+            fiveDaySnowTotal = $(this).children('.snowfall.ml-auto').text().replace(/[^\d.-]/g, '')
+            url = 'https://opensnow.com/location/' + resort.replace(' ', '').replace('MountB', 'mtb')
+            resorts.push({
+                resort, fiveDaySnowTotal, url
+            }) 
+                        
+        })
+    })
+
+    res.json(resorts)
+})
+
+app.listen(PORT, () => console.log(`Server running on port: ${PORT}`))
