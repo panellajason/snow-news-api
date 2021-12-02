@@ -62,9 +62,11 @@ newspapers.forEach(newspaper => {
             $('.link').each(function() {
                 url = $(this).attr('href').toString()
                 if (url.includes("mammoth") || (url.includes("tahoe") && !(url.includes("palisades"))) || url.includes("southerncalifornia")) {
-                    title = $(this).parent().find('.name').text()
+                    title = $(this).parent().find('.name').text() 
+                    $(this).parent().find('.author').remove();
+                    date = $(this).parent().find('.time').text().trim()
                     articles.push({
-                        title, url: newspaper.base + url, source: newspaper.name
+                        title: title + ' (' + date + ')', url: newspaper.base + url, source: newspaper.name
                     }) 
                 }
             })     
