@@ -89,7 +89,22 @@ axios.get('https://opensnow.com/dailysnow/southerncalifornia')
             })              
         })
     })
-    
+    axios.get('https://opensnow.com/dailysnow/mammoth')
+    .then((websiteResponse) => {
+
+        const html = websiteResponse.data
+        const $ = cheerio.load(html)
+
+        $('.resort').each(function() {
+            resort = $(this).children('.name').text()
+            fiveDaySnowTotal = $(this).children('.snowfall.ml-auto').text().replace(/[^\d.-]/g, '')
+            url = $(this).children('a').attr('href')
+            resorts.push({
+                resort, fiveDaySnowTotal, url: 'https://opensnow.com' + url
+            })              
+        })
+    })
+
 //Home Page
 app.get('/', (req, res) => {
     res.json('Welcome to Snow News!')
