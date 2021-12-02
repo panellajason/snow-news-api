@@ -1,11 +1,14 @@
-const PORT = 8000
+const PORT = process.env.PORT || 8000
 const express = require('express')
 const axios = require('axios')
 const cheerio = require('cheerio')
 
 const app = express()
+
 const articles = []
 const resorts = []
+
+//News Sources
 const newspapers = [
     {
         name: 'Open Snow',
@@ -18,14 +21,14 @@ const newspapers = [
         base: ''
     }, 
     {
-        name: 'Unofficial Networks',
-        address: 'https://unofficialnetworks.com/category/weather-2/',
-        base: ''
+        name: 'Powder Chasers',
+        address: 'https://powderchasers.com/forecasts',
+        base: 'https://powderchasers.com'
     }
 ]
 
+//Get News
 newspapers.forEach(newspaper => {
-
     axios.get(newspaper.address)
     .then((websiteResponse) => {
 
@@ -36,18 +39,20 @@ newspapers.forEach(newspaper => {
         url = ''
         if(newspaper.name == 'Snow Brains') {
 
-            $('a:contains("Forecast:")', html).each(function() {
-                title = $(this).text()
-                url = $(this).attr('href')
+            $('article').each( function() {
+                
+                title = $(this).find('h2').text().trim()
+                url = $(this).find('a').attr('href')
                 articles.push({
                     title, url: newspaper.base + url, source: newspaper.name
                 })
             })
-        } else if(newspaper.name == 'Unofficial Networks') {
-
-            $('a:contains("Powder")', html).each(function() {
-                title = $(this).text().replace(/\t|\n/g, '').replace(/\\/g, '') 
-                url = $(this).attr('href')
+        } else if(newspaper.name == 'Powder Chasers') {
+    
+            $('article').each( function() {
+                
+                title = $(this).find('b').text().trim()
+                url = $(this).children('a').attr('href')
                 articles.push({
                     title, url: newspaper.base + url, source: newspaper.name
                 })
@@ -57,31 +62,18 @@ newspapers.forEach(newspaper => {
             $('.link').each(function() {
                 url = $(this).attr('href').toString()
                 if (url.includes("mammoth") || (url.includes("tahoe") && !(url.includes("palisades"))) || url.includes("southerncalifornia")) {
-                    title = url.split('/')[2]
+                    title = $(this).parent().find('.name').text()
                     articles.push({
                         title, url: newspaper.base + url, source: newspaper.name
                     }) 
                 }
-                
-            })
+            })     
         }
-        
-
     })
 })
-//Home Page
-app.get('/', (req, res) => {
-    res.json('Welcome to Snow News')
-})
 
-//All News
-app.get('/allnews', (req, res) => {
-    res.json(articles)
-})
-
-//Snowfall Forecast
-app.get('/forecast', (req, res) => {
-    axios.get('https://opensnow.com/dailysnow/southerncalifornia')
+//Get Forecast
+axios.get('https://opensnow.com/dailysnow/southerncalifornia')
     .then((websiteResponse) => {
 
         const html = websiteResponse.data
@@ -90,14 +82,26 @@ app.get('/forecast', (req, res) => {
         $('.resort').each(function() {
             resort = $(this).children('.name').text()
             fiveDaySnowTotal = $(this).children('.snowfall.ml-auto').text().replace(/[^\d.-]/g, '')
-            url = 'https://opensnow.com/location/' + resort.replace(' ', '').replace('MountB', 'mtb')
+            //url = 'https://opensnow.com/location/' + resort.replace(' ', '').replace('MountB', 'mtb')
+            url = $(this).children('a').attr('href')
             resorts.push({
-                resort, fiveDaySnowTotal, url
-            }) 
-                        
+                resort, fiveDaySnowTotal, url: 'https://opensnow.com' + url
+            })              
         })
     })
+    
+//Home Page
+app.get('/', (req, res) => {
+    res.json('Welcome to Snow News!')
+})
 
+//All News
+app.get('/allnews', (req, res) => {
+    res.json(articles)
+})
+
+//5 day Snowfall Forecast
+app.get('/forecast', (req, res) => {
     res.json(resorts)
 })
 
